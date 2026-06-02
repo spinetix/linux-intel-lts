@@ -615,10 +615,10 @@ static void fw_reset_work_fn(struct work_struct *unused)
 
 void ish_send_time_sync(struct ishtp_device *dev)
 {
-	uint64_t usec;
+	struct ipc_time_update_msg time = {};
 
-	usec = ktime_to_us(ktime_get_boottime());
-	ipc_send_mng_msg(dev, MNG_SYNC_FW_CLOCK, &usec, sizeof(uint64_t));
+	/* The fields of time would be updated while sending message */
+	ipc_send_mng_msg(dev, MNG_SYNC_FW_CLOCK, &time, sizeof(time));
 
 }
 
