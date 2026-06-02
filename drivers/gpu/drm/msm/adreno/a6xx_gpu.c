@@ -1281,6 +1281,15 @@ static void a6xx_recover(struct msm_gpu *gpu)
 	gpu_write(gpu, REG_A6XX_CP_SQE_CNTL, 3);
 
 	/*
+	 * To handle recovery specific sequences during the rpm suspend we are
+	 * about to trigger
+	 */
+	a6xx_gpu->hung = true;
+
+	/* Halt SQE first */
+	gpu_write(gpu, REG_A6XX_CP_SQE_CNTL, 3);
+
+	/*
 	 * Turn off keep alive that might have been enabled by the hang
 	 * interrupt
 	 */
@@ -1319,6 +1328,7 @@ static void a6xx_recover(struct msm_gpu *gpu)
 	mutex_unlock(&gpu->active_lock);
 
 	msm_gpu_hw_init(gpu);
+	a6xx_gpu->hung = false;
 }
 
 static const char *a6xx_uche_fault_block(struct msm_gpu *gpu, u32 mid)
