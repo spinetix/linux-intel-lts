@@ -54,16 +54,11 @@ static unsigned int igc_tsn_new_flags(struct igc_adapter *adapter)
 static int igc_tsn_disable_offload(struct igc_adapter *adapter)
 {
 	struct igc_hw *hw = &adapter->hw;
-	u32 tqavctrl, rxpbs;
+	u32 tqavctrl;
 	int i;
 
 	wr32(IGC_TXPBS, I225_TXPBSIZE_DEFAULT);
 	wr32(IGC_DTXMXPKTSZ, IGC_DTXMXPKTSZ_DEFAULT);
-
-	rxpbs = rd32(IGC_RXPBS) & ~IGC_RXPBSIZE_SIZE_MASK;
-	rxpbs |= I225_RXPBSIZE_DEFAULT;
-
-	wr32(IGC_RXPBS, rxpbs);
 
 	tqavctrl = rd32(IGC_TQAVCTRL);
 	tqavctrl &= ~(IGC_TQAVCTRL_TRANSMIT_MODE_TSN |
@@ -88,7 +83,7 @@ static int igc_tsn_enable_offload(struct igc_adapter *adapter)
 {
 	struct igc_hw *hw = &adapter->hw;
 	u32 tqavctrl, baset_l, baset_h;
-	u32 sec, nsec, cycle, rxpbs;
+	u32 sec, nsec, cycle;
 	ktime_t base_time, systim;
 	int i;
 
@@ -100,11 +95,6 @@ static int igc_tsn_enable_offload(struct igc_adapter *adapter)
 	wr32(IGC_TXPBS, IGC_TXPBSIZE_TSN);
 
 	tqavctrl = rd32(IGC_TQAVCTRL);
-	rxpbs = rd32(IGC_RXPBS) & ~IGC_RXPBSIZE_SIZE_MASK;
-	rxpbs |= IGC_RXPBSIZE_TSN;
-
-	wr32(IGC_RXPBS, rxpbs);
-
 	tqavctrl |= IGC_TQAVCTRL_TRANSMIT_MODE_TSN | IGC_TQAVCTRL_ENHANCED_QAV;
 	wr32(IGC_TQAVCTRL, tqavctrl);
 
