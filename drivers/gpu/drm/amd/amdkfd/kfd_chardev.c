@@ -1106,7 +1106,7 @@ static int kfd_ioctl_alloc_memory_of_gpu(struct file *filep,
 			goto err_unlock;
 		}
 		offset = dev->adev->rmmio_remap.bus_addr;
-		if (!offset) {
+		if (!offset || (PAGE_SIZE > 4096)) {
 			err = -ENOMEM;
 			goto err_unlock;
 		}
@@ -2882,6 +2882,8 @@ static int kfd_mmio_mmap(struct kfd_dev *dev, struct kfd_process *process,
 		return -EINVAL;
 
 	address = dev->adev->rmmio_remap.bus_addr;
+	if (PAGE_SIZE > 4096)
+		return -EINVAL;
 
 	vma->vm_flags |= VM_IO | VM_DONTCOPY | VM_DONTEXPAND | VM_NORESERVE |
 				VM_DONTDUMP | VM_PFNMAP;
