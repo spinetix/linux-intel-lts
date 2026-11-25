@@ -1722,16 +1722,15 @@ static ssize_t amdgpu_get_gpu_metrics(struct device *dev,
 		return ret;
 	}
 
+	mutex_lock(&adev->pm.mutex);
 	size = amdgpu_dpm_get_gpu_metrics(adev, &gpu_metrics);
-	if (size <= 0)
-		goto out;
 
-	if (size >= PAGE_SIZE)
-		size = PAGE_SIZE - 1;
+	if (size > 0) {
+		size = min_t(ssize_t, size, PAGE_SIZE - 1);
+		memcpy(buf, gpu_metrics, size);
+	}
+	mutex_unlock(&adev->pm.mutex);
 
-	memcpy(buf, gpu_metrics, size);
-
-out:
 	pm_runtime_mark_last_busy(ddev->dev);
 	pm_runtime_put_autosuspend(ddev->dev);
 

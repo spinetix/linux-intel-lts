@@ -21,6 +21,7 @@ bool intel_vrr_is_capable(struct intel_connector *connector)
 	 * EDID monitor range also should be atleast 10 for reasonable
 	 * Adaptive Sync or Variable Refresh Rate end user experience.
 	 */
+
 	switch (connector->base.connector_type) {
 	case DRM_MODE_CONNECTOR_eDP:
 		if (!connector->panel.vbt.vrr)
@@ -36,6 +37,10 @@ bool intel_vrr_is_capable(struct intel_connector *connector)
 	default:
 		return false;
 	}
+
+	if (!info->monitor_range.min_vfreq || !info->monitor_range.max_vfreq ||
+	    info->monitor_range.min_vfreq > info->monitor_range.max_vfreq)
+		return false;
 
 	return HAS_VRR(i915) &&
 		info->monitor_range.max_vfreq - info->monitor_range.min_vfreq > 10;
