@@ -650,10 +650,14 @@ static int amdgpu_vce_validate_bo(struct amdgpu_cs_parser *p,
 static int amdgpu_vce_cs_reloc(struct amdgpu_cs_parser *p, struct amdgpu_ib *ib,
 			       int lo, int hi, unsigned size, uint32_t index)
 {
+	struct amdgpu_ib *ib = &p->job->ibs[ib_idx];
 	struct amdgpu_bo_va_mapping *mapping;
 	struct amdgpu_bo *bo;
 	uint64_t addr;
 	int r;
+
+	if (lo >= ib->length_dw || hi >= ib->length_dw)
+		return -EINVAL;
 
 	if (index == 0xffffffff)
 		index = 0;
