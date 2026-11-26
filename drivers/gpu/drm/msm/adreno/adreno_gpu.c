@@ -1056,6 +1056,8 @@ int adreno_gpu_init(struct drm_device *drm, struct platform_device *pdev,
 			return -ENOMEM;
 	}
 
+	gpu->pdev = pdev;
+
 	adreno_gpu_config.ioname = "kgsl_3d0_reg_memory";
 
 	adreno_gpu_config.nr_rings = nr_rings;
