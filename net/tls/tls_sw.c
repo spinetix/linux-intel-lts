@@ -278,9 +278,15 @@ static int tls_do_decryption(struct sock *sk,
 		BUILD_BUG_ON_INVALID(atomic_read(&ctx->decrypt_pending) < 1);
 		atomic_inc(&ctx->decrypt_pending);
 	} else {
+		DECLARE_CRYPTO_WAIT(wait);
+
 		aead_request_set_callback(aead_req,
 					  CRYPTO_TFM_REQ_MAY_BACKLOG,
-					  crypto_req_done, &ctx->async_wait);
+					  crypto_req_done, &wait);
+		ret = crypto_aead_decrypt(aead_req);
+		if (ret == -EINPROGRESS || ret == -EBUSY)
+			ret = crypto_wait_req(ret, &wait);
+		return ret;
 	}
 
 	ret = crypto_aead_decrypt(aead_req);
@@ -289,10 +295,7 @@ static int tls_do_decryption(struct sock *sk,
 		ret = ret ?: -EINPROGRESS;
 	}
 	if (ret == -EINPROGRESS) {
-		if (darg->async)
-			return 0;
-
-		ret = crypto_wait_req(ret, &ctx->async_wait);
+		return 0;
 	} else if (darg->async) {
 		atomic_dec(&ctx->decrypt_pending);
 	}
@@ -452,7 +455,7 @@ int tls_tx_records(struct sock *sk, int flags)
 	}
 
 tx_err:
-	if (rc < 0 && rc != -EAGAIN)
+	if (rc < 0 && rc != -EAGAIN && rc != -EINTR && rc != -ERESTARTSYS)
 		tls_err_abort(sk, rc);
 
 	return rc;
@@ -2075,10 +2078,10 @@ ssize_t tls_sw_splice_read(struct socket *sock,  loff_t *ppos,
 		ctx->recv_pkt = NULL;
 		__strp_unpause(&ctx->strp);
 	}
-	if (chunk < rxm->full_len) {
+	if (copied < rxm->full_len) {
 		__skb_queue_head(&ctx->rx_list, skb);
-		rxm->offset += len;
-		rxm->full_len -= len;
+		rxm->offset += copied;
+		rxm->full_len -= copied;
 	} else {
 		consume_skb(skb);
 	}
